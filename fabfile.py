@@ -19,17 +19,16 @@ import os
 from fabric.api import local, lcd, task
 
 # NOTE: Fill these in.
-LK_PROJECT_BASE = ""
-SOD_PROJECT_BASE = ""
-OPEN_OCD_BASE = ""
+LK_PROJECT_BASE = os.path.expanduser("~/code/lk")
+SOD_PROJECT_BASE = os.path.expanduser("~/code/sod")
+OPEN_OCD_BASE = os.path.expanduser("~/code/openocd")
 
+DARTUINO_BUILD_TARGET = "dartuinoP0-test"
 DISCO_BUILD_TARGET = "stm32f746g-disco-test"
 EVAL_BUILD_TARGET = "stm32746g-eval2-test"
 
 class LKTarget:
-	def __init__(self, repo_root, target_project, board_cfg, lk_subdir, build_dir):
-		stlinkConfigPath = "tcl/interface/stlink-v2-1.cfg"
-
+	def __init__(self, repo_root, target_project, board_cfg, stlink_cfg, lk_subdir, build_dir):
 		build_subdir = "build-" + target_project
 		full_binary_path = os.path.join(repo_root, build_dir, build_subdir, "lk.bin")
 
@@ -39,7 +38,7 @@ class LKTarget:
 
 		flash_command_list = [
 			"openocd",
-			"-f", stlinkConfigPath,
+			"-f", stlink_cfg,
 			"-f", board_cfg,
 			"-c", program_command
 		]
@@ -50,14 +49,20 @@ class LKTarget:
 		self.lk_subdir = lk_subdir
 
 
-DiscoLKTarget = LKTarget(LK_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "", "")
-EvalLKTarget = LKTarget(LK_PROJECT_BASE, EVAL_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "", "")
-DiscoSODTarget = LKTarget(SOD_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "third_party/lk", "out")
+DiscoLKTarget = LKTarget(LK_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "", "")
+DartuinioTarget = LKTarget(LK_PROJECT_BASE, DARTUINO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2.cfg", "", "")
+EvalLKTarget = LKTarget(LK_PROJECT_BASE, EVAL_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "", "")
+DiscoSODTarget = LKTarget(SOD_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "third_party/lk", "out")
 
 @task
 def disco_do():
 	build(DiscoLKTarget)
 	flash(DiscoLKTarget)
+
+@task
+def dartuino_do():
+	build(DartuinioTarget)
+	flash(DartuinioTarget)
 
 @task
 def eval_do():
