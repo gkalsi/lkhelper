@@ -24,13 +24,14 @@ SOD_PROJECT_BASE = os.path.expanduser("~/code/sod")
 OPEN_OCD_BASE = os.path.expanduser("~/code/openocd")
 
 DARTUINO_BUILD_TARGET = "dartuinoP0-test"
+DARTUINO_SOD_BUILD_TARGET = "dartuino-p0-fletch"
 DISCO_BUILD_TARGET = "stm32f746g-disco-test"
 EVAL_BUILD_TARGET = "stm32746g-eval2-test"
 
 class LKTarget:
-	def __init__(self, repo_root, target_project, board_cfg, stlink_cfg, lk_subdir, build_dir):
+	def __init__(self, repo_root, target_project, board_cfg, stlink_cfg, bin_dir):
 		build_subdir = "build-" + target_project
-		full_binary_path = os.path.join(repo_root, build_dir, build_subdir, "lk.bin")
+		full_binary_path = os.path.join(repo_root, bin_dir, build_subdir, "lk.bin")
 
 		program_command_list = ["program", full_binary_path, "reset", "exit", "0x08000000"]
 		program_command = " ".join(program_command_list)
@@ -46,13 +47,13 @@ class LKTarget:
 		self.flash_command = " ".join(flash_command_list)
 		self.target_project = target_project
 		self.repo_root = repo_root
-		self.lk_subdir = lk_subdir
 
 
-DiscoLKTarget = LKTarget(LK_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "", "")
-DartuinioTarget = LKTarget(LK_PROJECT_BASE, DARTUINO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2.cfg", "", "")
-EvalLKTarget = LKTarget(LK_PROJECT_BASE, EVAL_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "", "")
-DiscoSODTarget = LKTarget(SOD_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "third_party/lk", "out")
+DiscoLKTarget = LKTarget(LK_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "")
+DartuinioTarget = LKTarget(LK_PROJECT_BASE, DARTUINO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2.cfg", "")
+EvalLKTarget = LKTarget(LK_PROJECT_BASE, EVAL_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "")
+DiscoSODTarget = LKTarget(SOD_PROJECT_BASE, DISCO_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2-1.cfg", "out")
+DartuinoSODTarget = LKTarget(SOD_PROJECT_BASE, DARTUINO_SOD_BUILD_TARGET, "tcl/board/stm32746g_eval.cfg", "tcl/interface/stlink-v2.cfg", "out")
 
 @task
 def disco_do():
@@ -74,22 +75,19 @@ def sod_do():
 	build(DiscoSODTarget)
 	flash(DiscoSODTarget)
 
+@task
+def sod_dartuino_do():
+	build(DartuinoSODTarget)
+	flash(DartuinoSODTarget)
+
 def flash(target):
 	with lcd(OPEN_OCD_BASE):
 		local(target.flash_command)
 
 def build(target):
-	lk_path = os.path.join(target.repo_root, target.lk_subdir)
-	setTarget(target.target_project, lk_path)
+	make_cmd = "make PROJECT=%s" % target.target_project
 
 	with lcd(target.repo_root):
-		local("make -j")
-
-def setTarget(target, path):
-	local_mkpath = os.path.join(path, "local.mk")
-
-	full_target = "PROJECT ?= " + target
-	with open(local_mkpath, 'w') as f:
-		f.write(full_target)
+		local(make_cmd)
 
 
