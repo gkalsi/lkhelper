@@ -15,6 +15,8 @@
 """
 
 import os
+import re
+import fileinput
 
 from fabric.api import local, lcd, task
 
@@ -26,6 +28,11 @@ OPEN_OCD_BASE = os.path.expanduser("~/code/openocd")
 DARTUINO_BUILD_TARGET = "dartuinoP0-test"
 DISCO_BUILD_TARGET = "stm32f746g-disco-test"
 EVAL_BUILD_TARGET = "stm32746g-eval2-test"
+
+displays = {
+	'color' : 'LS013B7DH06',
+	'mono' : 'LS027B7DH01',
+}
 
 class LKTarget:
 	def __init__(self, repo_root, target_project, board_cfg, stlink_cfg, lk_subdir, build_dir):
@@ -60,7 +67,8 @@ def disco_do():
 	flash(DiscoLKTarget)
 
 @task
-def dartuino_do():
+def dartuino_do(display=None):
+	setDisplay(DartuinioTarget, display)
 	build(DartuinioTarget)
 	flash(DartuinioTarget)
 
@@ -84,6 +92,22 @@ def build(target):
 
 	with lcd(target.repo_root):
 		local("make -j")
+
+def setDisplay(target, display):
+	if display not in displays:
+		return
+
+	display_name = displays.get(display)
+
+	target_name = re.sub('-test$', '', target.target_project)
+	target_rules_path = os.path.join(target.repo_root, target.lk_subdir, "target", target_name, "rules.mk")
+
+	for line in fileinput.input(target_rules_path, inplace=True):
+	    if line.startswith('DISPLAY :='):
+	    	print 'DISPLAY :=', display_name
+	    else:
+	    	print line,
+
 
 def setTarget(target, path):
 	local_mkpath = os.path.join(path, "local.mk")
