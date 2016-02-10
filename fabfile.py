@@ -24,7 +24,7 @@ SOD_PROJECT_BASE = os.path.expanduser("~/code/sod")
 OPEN_OCD_BASE = os.path.expanduser("~/code/openocd")
 
 DARTUINO_BUILD_TARGET = "dartuinoP0-test"
-DARTUINO_SOD_BUILD_TARGET = "dartuino-p0-fletch"
+DARTUINO_SOD_BUILD_TARGET = "dartuino-p0-dartino"
 DISCO_BUILD_TARGET = "stm32f746g-disco-test"
 EVAL_BUILD_TARGET = "stm32746g-eval2-test"
 
